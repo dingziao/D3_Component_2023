@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>D3.js Demo</title>
+</head>
+<body>
+    <div style="text-align: center; padding-top: 2em;">
+        <svg 
+        style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)"></svg>
+    </div>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script charset="utf-8">
+    // 在此处写图表代码
+    var dataset = [0, 4, 13]
+    var svg = d3.select('svg').attr('width', '100vw').attr('height', '100vh')
+    var g = svg.append('g').attr('transform', 'translate(75, 75)')
+    var pie = d3.pie().value(v => { return v })
+    // console.log(dataset);
+    // console.log(pie(dataset));
+    var colors = d3.scaleOrdinal(['#FEF5EC', '#7B946C' ,'#44A88D']);
+    var treatments = ["A", "B","C"]
+
+    // 鼠标移入饼图区域
+    var handleMouseOver = function (e, v) {
+        d3.select(this).attr('opacity', 1)
+
+        var pos = d3.pointer(e)
+        var x = pos[0]+95
+        var y = pos[1]+75
+        var tooltip = svg.append('g').attr('class', 'tooltip').attr('transform', 'translate('+x+','+y+')')
+        var text = tooltip.append('text').text(v.value).attr('text-anchor', 'middle')
+        var box = text.node().getBBox()
+        
+
+        tooltip.insert('rect', 'text')
+            .attr('x', box.x)
+            .attr('y', box.y)
+            .attr('width', box.width)
+            .attr('height', box.height)
+            .attr('fill', 'white')
+            .attr('opacity', 0.7)
+    }
+
+    // 鼠标在饼图区域移动
+    var handleMouseMove = function (e) {
+        var pos = d3.pointer(e)
+        var x = pos[0]+95
+        var y = pos[1]+75
+
+        d3.select('.tooltip')
+            .attr('transform', 'translate('+x+','+y+')')
+    }
+
+    // 鼠标移出饼图区域
+    var handleMouseOut = function () {
+        d3.select(this).attr('opacity', 0.8)
+        d3.select('.tooltip').remove()
+    }
+
+    g.selectAll('path').data(pie(dataset)).enter()
+        .append('path')
+        .attr('d', d3.arc().innerRadius(30).outerRadius(50))
+        .attr('stroke', 'white')
+        .attr('stroke-width', 2)
+        .attr('fill', (v, i) => colors(i))
+        .attr('opacity', 0.8)
+        .on('mouseover', handleMouseOver) // 绑定鼠标移入事件处理方法
+        .on('mousemove', handleMouseMove) // 绑定鼠标移动事件处理方法
+        .on('mouseout', handleMouseOut) // 绑定鼠标移出事件处理方法
+    
+    // 绘制图例区块
+    var legend = svg.append('g').attr('transform', 'translate(170, 50)')
+
+    // 绘制图例圆点图标
+    legend.selectAll('circle').data(dataset).enter()
+        .append('circle')
+        .attr('r', 6)
+        .attr('cy', (v, i) => { return i*20+5 })
+        .attr('fill', (v, i) => colors(i))
+
+    // 绘制图例文字数值
+    legend.selectAll('text').data(dataset).enter()
+        .append('text')
+        .text((v, i) => { return "Treatment "+ treatments[i] })
+        .attr('x', 15)
+        .attr('y', (v, i) => { return i*20+10 })
+        .attr('font-size', '0.5em')
+        .attr('text-auchor', 'middle')
+</script>
+</body>
+</html>

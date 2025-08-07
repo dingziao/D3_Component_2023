@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>D3.js Demo</title>
+</head>
+<body>
+    <div style="text-align: center; padding-top: 2em;">
+        <svg 
+        style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)"></svg>
+    </div>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script charset="utf-8">
+    // 在此处写图表代码
+    const SVG_WIDTH = 1050;
+    const SVG_HEIGHT = 180;
+    const MARGIN = 20;
+    const MONTH_BOX_HEIGHT = 20;
+    const WEEK_BOX_WIDTH = 35;
+    const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const WEEK_DAYS_LABEL = ['Mon', 'Wed', 'Fri', 'Sun'];
+
+    
+    const generateDataset = (forwardMonth, options={}) => {
+        const config = Object.assign({}, {
+            endDate: null,
+            fill: {},
+        }, options)
+
+        const months = []
+        const days = []
+        console.log(config.fill);
+        // 计算需要填充的日期
+        for (let i=forwardMonth; i>0; i--) {
+            let referDate = config.endDate
+                ? new Date(config.endDate)
+                : new Date()
+
+            referDate.setMonth(referDate.getMonth()-i+2)
+            referDate.setDate(0)
+
+            let month = referDate.getMonth()+1
+            month = month < 10 ? '0'+month : month
+
+            for (let d=1; d<=referDate.getDate(); d++) {
+                let day = d < 10 ? '0'+d : d
+                let data = {
+                    date: referDate.getFullYear()+'-'+month+'-'+day,
+                }
+
+                if (config.fill.hasOwnProperty(data.date)) {
+                    data.total = config.fill[data.date]
+                }
+
+                days.push(data)
+            }
+
+            months.push(referDate.getFullYear()+'-'+month)
+        }
+
+        // 确保第一个日期是从星期一开始
+        // 不是星期一就向前追加相应的天数
+        let firstDate = days[0].date
+
+        let d = new Date(firstDate)
+        let day = d.getDay()
+        if (day == 0) {
+            day = 7
+        }
+
+        for (let i=1; i<day; i++) {
+            let d = new Date(firstDate)
+            d.setDate(d.getDate()-i)
+
+            let v = [d.getFullYear(), d.getMonth()+1, d.getDate()]
+
+            if (v[1] < 10) {
+                v[1] = '0'+v[1];
+            }
+
+            if (v[2] < 10) {
+                v[2] = '0'+v[2];
+            }
+
+            days.unshift({date: v.join('-')})
+        }
+
+        return {days: days, months: months}
+    }
+
+    const dataset = generateDataset(12, {
+    // 定义要高亮显示的日期数据
+    fill: {
+        '2023-01-03': 1,
+        '2023-01-04': 2,
+        '2023-02-07': 1,
+        '2023-03-12': 1,
+        '2023-03-13': 1,
+        '2023-04-23': 2,
+        '2023-04-24': 1,
+        '2023-04-25': 1,
+        '2023-04-26': 1,
+        '2023-04-27': 3,
+        '2023-06-24': 2,
+        '2023-06-25': 2,
+        '2023-06-26': 3,
+        '2023-06-27': 3,
+        '2023-10-24': 1,
+        '2023-10-25': 2,
+        '2023-10-26': 3,
+        '2023-10-27': 3,
+    }});
+    console.log(dataset);
+    const month_scale = d3.scaleLinear([0, dataset.months.length], [0, SVG_WIDTH-2*MARGIN-WEEK_BOX_WIDTH]);
+    const week_scale = d3.scaleBand(WEEK, [0, SVG_HEIGHT-2*MARGIN-MONTH_BOX_HEIGHT+15]);
+
+
+    var svg = d3.select('svg').attr('width', SVG_WIDTH).attr('height', SVG_HEIGHT);
+    var month_box = svg.append('g')
+        .attr('transform', 'translate('+ (MARGIN+WEEK_BOX_WIDTH) +', '+ MARGIN +')');
+    month_box.selectAll("text").data(dataset.months).enter().append('text').text(v => v)
+        .attr("x", (v, i) => month_scale(i))
+        .attr("font-size", "0.7em").attr("fill", "#999")
+        .attr("font-family", 'consolas')
+
+    var week_box = svg.append('g')
+        .attr('transform', 'translate('+(MARGIN-5)+','+(MARGIN+MONTH_BOX_HEIGHT)+')');
+    week_box.selectAll('text').data(WEEK_DAYS_LABEL).enter().append('text').text(v=>v)
+        .attr('y', (v, i) => week_scale(v))
+        .attr("font-size", "0.7em").attr("fill", "#999")
+        .attr("font-family", 'consolas')
+
+
+    // 绘制日期方块
+    const cell_box = svg.append('g').attr(
+        'transform',
+        'translate('+(MARGIN+WEEK_BOX_WIDTH)+', '+(MARGIN+MONTH_BOX_HEIGHT-5)+')')
+
+    // 设置方块间距
+    const CELL_MARGIN = 4
+    const CELL_SIZE = (SVG_HEIGHT-MARGIN*2-MONTH_BOX_HEIGHT-CELL_MARGIN*6+5)/7
+    // 方块列计数器
+    var cellCol = 0
+
+    var cell = cell_box.selectAll('rect').data(dataset.days).enter()
+        .append('rect').attr('width', CELL_SIZE).attr('height', CELL_SIZE).attr('rx', 3)
+        .attr('x', (v, i)=>{
+            let col = Math.floor(i/7);
+            return col * (CELL_SIZE + CELL_MARGIN)
+        })
+        .attr('y', (v, i)=>{
+            let row = i%7;
+            return row * (CELL_SIZE + CELL_MARGIN)
+        })
+        .attr('fill', v => {
+            if (v.total == undefined) {
+                return '#EFEFEF'
+            }
+            if (v.total == 1) {
+                return '#FFEEDD'
+            }
+            if (v.total == 2) {
+                return '#FFCC99'
+            }
+            if (v.total > 2) {
+                return '#F96'
+            }
+        })
+        .on('mouseover', (e, v)=>console.log(v)) // 绑定鼠标移入事件处理方法
+
+
+
+    
+
+
+
+</script>
+</body>
+</html>

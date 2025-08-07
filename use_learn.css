@@ -1,0 +1,8 @@
+.svg {
+    background-color: antiquewhite;
+}
+.cube-unit {
+    fill-opacity: .9;
+    stroke-miterlimit: 0;
+    display: none;
+}

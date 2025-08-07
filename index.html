@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D3.js Demo Collection</title>
+    <style>
+        .svg {
+            background-color: antiquewhite;
+        }
+        .cube-unit {
+            fill-opacity: .9;
+            stroke-miterlimit: 0;
+            display: none;
+        }
+        .component-section {
+            margin: 40px 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 40px;
+        }
+        .component-title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Emulate 3D Component -->
+    <div class="component-section">
+        <h2 class="component-title">Emulate 3D Component</h2>
+        <div style="text-align: center; padding-top: 2em;">
+            <svg style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)" class="svg" width="1000" height="500">
+                <g id="cube" transform="translate(20 20)" class="cube-unit">
+                    <rect width="21" height="24" fill=var(--fill-color) stroke="#0079AD" transform="skewY(30)"/>
+                    <rect width="21" height="24" fill="#19A5E1" stroke="#0079AD" transform="skewY(-30) translate(21 24.3)"/>
+                    <rect width="21" height="21" fill="#19A5E1" stroke="#0079AD" transform="scale(1.41,.81) rotate(45) translate(0 -21)"/>
+                </g>
+
+                <g id="u1">
+                <g id="unit" transform="translate(10 -10)">
+                    <polygon id="unit-0" points="0,0 36,0 36,36 18,36 18,18 0,18" transform="skewY(30) translate(0 36)"
+                        style="fill:#E87B01;stroke:white;stroke-width:1" />
+                    <polygon id="unit-0" points="0,0 18,0 18,18 36,18 36,36 0,36" transform="translate(72 36) rotate(90 0 0) skewX(30)"
+                        style="fill:#ED8E36;stroke:white;stroke-width:1" />
+                    <polygon id="unit-0" points="0,0 18,0 18,18 36,18 36,36 0,36" transform="scale(1.41,.81) translate(0 44.5) rotate(315) "
+                        style="fill:#EEA45E;stroke:white;stroke-width:1" />
+                </g>
+                <use xlink:href="#unit" x="54.6" y="28.6"/>
+                <use xlink:href="#unit" x="0" y="57.4"/>
+                <use xlink:href="#unit" x="54.6" y="86"/>
+                </g>
+                <use xlink:href="#u1" x="0" y="114.8"/>
+                <use xlink:href="#u1" x="109.6" y="57.8"/>
+                <use xlink:href="#u1" x="109.6" y="172.8"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Daily Heat Map Component -->
+    <div class="component-section">
+        <h2 class="component-title">Daily Heat Map Component</h2>
+        <div style="text-align: center; padding-top: 2em;">
+            <svg id="daily-map-svg" style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)"></svg>
+        </div>
+    </div>
+
+    <!-- Basic Bar Chart Component -->
+    <div class="component-section">
+        <h2 class="component-title">Basic Bar Chart Component</h2>
+        <div style="text-align: center; padding-top: 2em;">
+            <svg id="bar-chart-svg" style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)"></svg>
+        </div>
+    </div>
+
+    <!-- Basic Pie Chart Component -->
+    <div class="component-section">
+        <h2 class="component-title">Basic Pie Chart Component</h2>
+        <div style="text-align: center; padding-top: 2em;">
+            <svg id="pie-chart-svg" style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)"></svg>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script charset="utf-8">
+        // Use Learn Component Script
+        const r = d3.range(100);
+        console.log(r);
+
+        // Daily Map Component Script
+        const SVG_WIDTH = 1050;
+        const SVG_HEIGHT = 180;
+        const MARGIN = 20;
+        const MONTH_BOX_HEIGHT = 20;
+        const WEEK_BOX_WIDTH = 35;
+        const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        const WEEK_DAYS_LABEL = ['Mon', 'Wed', 'Fri', 'Sun'];
+
+        const generateDataset = (forwardMonth, options={}) => {
+            const config = Object.assign({}, {
+                endDate: null,
+                fill: {},
+            }, options)
+
+            const months = []
+            const days = []
+            console.log(config.fill);
+            // Calculate dates to fill
+            for (let i=forwardMonth; i>0; i--) {
+                let referDate = config.endDate
+                    ? new Date(config.endDate)
+                    : new Date()
+
+                referDate.setMonth(referDate.getMonth()-i+2)
+                referDate.setDate(0)
+
+                let month = referDate.getMonth()+1
+                month = month < 10 ? '0'+month : month
+
+                for (let d=1; d<=referDate.getDate(); d++) {
+                    let day = d < 10 ? '0'+d : d
+                    let data = {
+                        date: referDate.getFullYear()+'-'+month+'-'+day,
+                    }
+
+                    if (config.fill.hasOwnProperty(data.date)) {
+                        data.total = config.fill[data.date]
+                    }
+
+                    days.push(data)
+                }
+
+                months.push(referDate.getFullYear()+'-'+month)
+            }
+
+            // Ensure first date starts from Monday
+            // If not Monday, prepend corresponding days
+            let firstDate = days[0].date
+
+            let d = new Date(firstDate)
+            let day = d.getDay()
+            if (day == 0) {
+                day = 7
+            }
+
+            for (let i=1; i<day; i++) {
+                let d = new Date(firstDate)
+                d.setDate(d.getDate()-i)
+
+                let v = [d.getFullYear(), d.getMonth()+1, d.getDate()]
+
+                if (v[1] < 10) {
+                    v[1] = '0'+v[1];
+                }
+
+                if (v[2] < 10) {
+                    v[2] = '0'+v[2];
+                }
+
+                days.unshift({date: v.join('-')})
+            }
+
+            return {days: days, months: months}
+        }
+
+        const dataset = generateDataset(12, {
+        // Define date data to highlight
+        fill: {
+            '2023-01-03': 1,
+            '2023-01-04': 2,
+            '2023-02-07': 1,
+            '2023-03-12': 1,
+            '2023-03-13': 1,
+            '2023-04-23': 2,
+            '2023-04-24': 1,
+            '2023-04-25': 1,
+            '2023-04-26': 1,
+            '2023-04-27': 3,
+            '2023-06-24': 2,
+            '2023-06-25': 2,
+            '2023-06-26': 3,
+            '2023-06-27': 3,
+            '2023-10-24': 1,
+            '2023-10-25': 2,
+            '2023-10-26': 3,
+            '2023-10-27': 3,
+        }});
+        console.log(dataset);
+        const month_scale = d3.scaleLinear([0, dataset.months.length], [0, SVG_WIDTH-2*MARGIN-WEEK_BOX_WIDTH]);
+        const week_scale = d3.scaleBand(WEEK, [0, SVG_HEIGHT-2*MARGIN-MONTH_BOX_HEIGHT+15]);
+
+        var svg = d3.select('#daily-map-svg').attr('width', SVG_WIDTH).attr('height', SVG_HEIGHT);
+        var month_box = svg.append('g')
+            .attr('transform', 'translate('+ (MARGIN+WEEK_BOX_WIDTH) +', '+ MARGIN +')');
+        month_box.selectAll("text").data(dataset.months).enter().append('text').text(v => v)
+            .attr("x", (v, i) => month_scale(i))
+            .attr("font-size", "0.7em").attr("fill", "#999")
+            .attr("font-family", 'consolas')
+
+        var week_box = svg.append('g')
+            .attr('transform', 'translate('+(MARGIN-5)+','+(MARGIN+MONTH_BOX_HEIGHT)+')');
+        week_box.selectAll('text').data(WEEK_DAYS_LABEL).enter().append('text').text(v=>v)
+            .attr('y', (v, i) => week_scale(v))
+            .attr("font-size", "0.7em").attr("fill", "#999")
+            .attr("font-family", 'consolas')
+
+        // Draw date cells
+        const cell_box = svg.append('g').attr(
+            'transform',
+            'translate('+(MARGIN+WEEK_BOX_WIDTH)+', '+(MARGIN+MONTH_BOX_HEIGHT-5)+')')
+
+        // Set cell spacing
+        const CELL_MARGIN = 4
+        const CELL_SIZE = (SVG_HEIGHT-MARGIN*2-MONTH_BOX_HEIGHT-CELL_MARGIN*6+5)/7
+        // Cell column counter
+        var cellCol = 0
+
+        var cell = cell_box.selectAll('rect').data(dataset.days).enter()
+            .append('rect').attr('width', CELL_SIZE).attr('height', CELL_SIZE).attr('rx', 3)
+            .attr('x', (v, i)=>{
+                let col = Math.floor(i/7);
+                return col * (CELL_SIZE + CELL_MARGIN)
+            })
+            .attr('y', (v, i)=>{
+                let row = i%7;
+                return row * (CELL_SIZE + CELL_MARGIN)
+            })
+            .attr('fill', v => {
+                v.total = Math.floor(Math.random() * 3) + 1
+                if (v.total == undefined) {
+                    return '#EFEFEF'
+                }
+                if (v.total == 1) {
+                    return '#FFEEDD'
+                }
+                if (v.total == 2) {
+                    return '#FFCC99'
+                }
+                if (v.total > 2) {
+                    return '#F96'
+                }
+            })
+            .on('mouseover', (e, v)=>console.log(v)) // Bind mouseover event handler
+
+        // Bar Chart Component Script
+        var barDataset = [180, 80, 100, 280, 90, 90, 90]
+        var barSvg = d3.select('#bar-chart-svg').attr('height', 240).attr('width', 460)
+        var barHeight = 200/barDataset.length
+        var barLength = d3.scaleLinear([0, d3.max(barDataset)], [0, 400])
+        var barX = d3.scaleLinear()
+            .domain([0, barDataset.length])
+            .range([0, 200])
+
+        var barG = barSvg.append('g').attr('transform', 'translate(40, 20)')
+        barG.selectAll('rect').data(barDataset).enter()
+            .append('rect')
+            .attr('height', barHeight-3 )
+            .attr('width',  (v, i) => barLength(v) )
+            .attr('x', 0)
+            .attr('y', (v, i) => barX(i) )
+            .attr('fill', '#9C6')
+            .attr('rx', 5)
+
+        barG.selectAll('text').data(barDataset).enter()
+            .append('text')
+            .text(v => { return v })
+            .attr('x', v => { return barLength(v)-5  })
+            .attr('y', (v, i) => { return barX(i)+barHeight/2 })
+            .attr('fill', 'white')
+            .attr('font-size', '0.7em')
+            .attr('text-anchor', 'end')
+
+        var barAxisG = barSvg.append('g')
+            .attr('transform', 'translate(40, 20)')
+        var axis = d3.axisTop(barLength);
+        axis(barAxisG)
+
+        var labelScale = d3.scaleBand( barDataset.keys(), [0, 200])
+        barSvg.append('g')
+            .attr('transform', 'translate(40, 20)')
+            .call(d3.axisLeft(labelScale))
+
+        // Pie Chart Component Script
+        var pieDataset = [0, 4, 13]
+        var pieSvg = d3.select('#pie-chart-svg').attr('width', '250px').attr('height', '150px')
+        var pieG = pieSvg.append('g').attr('transform', 'translate(75, 75)')
+        var pie = d3.pie().value(v => { return v })
+        var colors = d3.scaleOrdinal(['#FEF5EC', '#7B946C' ,'#44A88D']);
+        var treatments = ["A", "B","C"]
+
+        // Mouse enter pie chart area
+        var handleMouseOver = function (e, v) {
+            d3.select(this).attr('opacity', 1)
+
+            var pos = d3.pointer(e)
+            var x = pos[0]+95
+            var y = pos[1]+75
+            var tooltip = pieSvg.append('g').attr('class', 'tooltip').attr('transform', 'translate('+x+','+y+')')
+            var text = tooltip.append('text').text(v.value).attr('text-anchor', 'middle')
+            var box = text.node().getBBox()
+            
+            tooltip.insert('rect', 'text')
+                .attr('x', box.x)
+                .attr('y', box.y)
+                .attr('width', box.width)
+                .attr('height', box.height)
+                .attr('fill', 'white')
+                .attr('opacity', 0.7)
+        }
+
+        // Mouse move in pie chart area
+        var handleMouseMove = function (e) {
+            var pos = d3.pointer(e)
+            var x = pos[0]+95
+            var y = pos[1]+75
+
+            d3.select('.tooltip')
+                .attr('transform', 'translate('+x+','+y+')')
+        }
+
+        // Mouse leave pie chart area
+        var handleMouseOut = function () {
+            d3.select(this).attr('opacity', 0.8)
+            d3.select('.tooltip').remove()
+        }
+
+        pieG.selectAll('path').data(pie(pieDataset)).enter()
+            .append('path')
+            .attr('d', d3.arc().innerRadius(30).outerRadius(50))
+            .attr('stroke', 'white')
+            .attr('stroke-width', 2)
+            .attr('fill', (v, i) => colors(i))
+            .attr('opacity', 0.8)
+            .on('mouseover', handleMouseOver) // Bind mouseover event handler
+            .on('mousemove', handleMouseMove) // Bind mousemove event handler
+            .on('mouseout', handleMouseOut) // Bind mouseout event handler
+        
+        // Draw legend area
+        var legend = pieSvg.append('g').attr('transform', 'translate(170, 50)')
+
+        // Draw legend circle icons
+        legend.selectAll('circle').data(pieDataset).enter()
+            .append('circle')
+            .attr('r', 6)
+            .attr('cy', (v, i) => { return i*20+5 })
+            .attr('fill', (v, i) => colors(i))
+
+        // Draw legend text values
+        legend.selectAll('text').data(pieDataset).enter()
+            .append('text')
+            .text((v, i) => { return "Treatment "+ treatments[i] })
+            .attr('x', 15)
+            .attr('y', (v, i) => { return i*20+10 })
+            .attr('font-size', '0.5em')
+            .attr('text-auchor', 'middle')
+    </script>
+</body>
+</html>

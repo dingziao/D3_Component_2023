@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D3.js Demo</title>
+    <link rel="stylesheet" href="use_learn.css">
+</head>
+<body>
+    <div style="text-align: center; padding-top: 2em;">
+        <svg style="box-shadow:0 0 0.5em rgba(0, 0, 0, 0.2)" class="svg" width="1000" height="500">
+            <g id="cube" transform="translate(20 20)" class="cube-unit">
+                <rect width="21" height="24" fill=var(--fill-color) stroke="#0079AD" transform="skewY(30)"/>
+                <rect width="21" height="24" fill="#19A5E1" stroke="#0079AD" transform="skewY(-30) translate(21 24.3)"/>
+                <rect width="21" height="21" fill="#19A5E1" stroke="#0079AD" transform="scale(1.41,.81) rotate(45) translate(0 -21)"/>
+            </g>
+
+            <g id="u1">
+            <g id="unit" transform="translate(10 -10)">
+                <polygon id="unit-0" points="0,0 36,0 36,36 18,36 18,18 0,18" transform="skewY(30) translate(0 36)"
+                    style="fill:#E87B01;stroke:white;stroke-width:1" />
+                <polygon id="unit-0" points="0,0 18,0 18,18 36,18 36,36 0,36" transform="translate(72 36) rotate(90 0 0) skewX(30)"
+                    style="fill:#ED8E36;stroke:white;stroke-width:1" />
+                <polygon id="unit-0" points="0,0 18,0 18,18 36,18 36,36 0,36" transform="scale(1.41,.81) translate(0 44.5) rotate(315) "
+                    style="fill:#EEA45E;stroke:white;stroke-width:1" />
+            </g>
+            <use xlink:href="#unit" x="54.6" y="28.6"/>
+            <use xlink:href="#unit" x="0" y="57.4"/>
+            <use xlink:href="#unit" x="54.6" y="86"/>
+            </g>
+            <use xlink:href="#u1" x="0" y="114.8"/>
+            <use xlink:href="#u1" x="109.6" y="57.8"/>
+            <use xlink:href="#u1" x="109.6" y="172.8"/>
+
+
+        </svg>
+    </div>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script charset="utf-8">
+    // 在此处写图表代码
+    const r = d3.range(100);
+    console.log(r);
+
+    
+</script>
+</body>
+</html>
